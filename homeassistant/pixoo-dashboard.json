@@ -1,0 +1,277 @@
+{
+  "title": "Pixoo",
+  "views": [
+    {
+      "title": "Pixoo",
+      "path": "pixoo",
+      "icon": "mdi:led-matrix",
+      "type": "sections",
+      "max_columns": 3,
+      "sections": [
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Now showing",
+              "icon": "mdi:television-ambient-light"
+            },
+            {
+              "type": "entities",
+              "show_header_toggle": false,
+              "entities": [
+                {
+                  "entity": "light.pixoo_display",
+                  "name": "Display (on/off, brightness)"
+                },
+                {
+                  "entity": "sensor.pixoo_now_showing",
+                  "name": "Now showing"
+                },
+                {
+                  "entity": "select.pixoo_mode",
+                  "name": "Mode"
+                },
+                {
+                  "entity": "number.pixoo_dwell",
+                  "name": "Seconds per game"
+                },
+                {
+                  "entity": "number.pixoo_gif_minutes",
+                  "name": "Minutes per animation"
+                },
+                {
+                  "entity": "number.pixoo_final_hours",
+                  "name": "Hours to keep finals"
+                },
+                {
+                  "entity": "select.pixoo_units",
+                  "name": "Temperature units"
+                },
+                {
+                  "entity": "number.pixoo_city_seconds",
+                  "name": "Seconds per city"
+                },
+                {
+                  "entity": "binary_sensor.pixoo_online",
+                  "name": "Display online"
+                }
+              ]
+            },
+            {
+              "type": "markdown",
+              "title": "In the rotation today",
+              "content": "{% set g = state_attr('sensor.pixoo_games_in_rotation', 'games') %}{% if g %}{% for x in g %}- {{ x }}\n{% endfor %}{% else %}Nothing selected for today.{% endif %}"
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Timer, countdown and music",
+              "icon": "mdi:timer-outline"
+            },
+            {
+              "type": "entities",
+              "show_header_toggle": false,
+              "entities": [
+                {
+                  "entity": "sensor.pixoo_timer",
+                  "name": "Timer"
+                },
+                {
+                  "entity": "number.pixoo_timer_minutes",
+                  "name": "Timer minutes"
+                },
+                {
+                  "entity": "button.pixoo_timer_start",
+                  "name": "Start timer"
+                },
+                {
+                  "entity": "button.pixoo_timer_pause",
+                  "name": "Pause or resume timer"
+                },
+                {
+                  "entity": "button.pixoo_timer_cancel",
+                  "name": "Cancel timer"
+                },
+                {
+                  "entity": "number.pixoo_countdown_seconds",
+                  "name": "Seconds per countdown"
+                },
+                {
+                  "entity": "number.pixoo_vis_style",
+                  "name": "Visualizer style"
+                },
+                {
+                  "entity": "switch.pixoo_vis_cycle",
+                  "name": "Cycle visualizer favourites"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Games",
+              "icon": "mdi:scoreboard"
+            },
+            {
+              "type": "entities",
+              "show_header_toggle": false,
+              "entities": [
+                {
+                  "entity": "select.pixoo_add_game",
+                  "name": "Add a game (today)"
+                },
+                {
+                  "entity": "select.pixoo_remove_game",
+                  "name": "Remove a game"
+                }
+              ]
+            },
+            {
+              "type": "button",
+              "name": "Open the Pixoo web app",
+              "icon": "mdi:open-in-new",
+              "show_state": false,
+              "tap_action": {
+                "action": "url",
+                "url_path": "http://HOST:8017"
+              }
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Teams followed",
+              "icon": "mdi:star"
+            },
+            {
+              "type": "entities",
+              "show_header_toggle": false,
+              "entities": [
+                {
+                  "entity": "switch.pixoo_team_cfl_bc",
+                  "name": "BC Lions"
+                },
+                {
+                  "entity": "switch.pixoo_team_nfl_sea",
+                  "name": "Seahawks"
+                },
+                {
+                  "entity": "switch.pixoo_team_mls_van",
+                  "name": "Whitecaps"
+                },
+                {
+                  "entity": "switch.pixoo_team_nhl_van",
+                  "name": "Canucks"
+                },
+                {
+                  "entity": "switch.pixoo_team_mlb_sea",
+                  "name": "Mariners"
+                },
+                {
+                  "entity": "switch.pixoo_team_mlb_tor",
+                  "name": "Blue Jays"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "grid",
+          "cards": [
+            {
+              "type": "heading",
+              "heading": "Leagues",
+              "icon": "mdi:trophy-outline"
+            },
+            {
+              "type": "entities",
+              "show_header_toggle": false,
+              "entities": [
+                {
+                  "entity": "switch.pixoo_league_nfl",
+                  "name": "NFL"
+                },
+                {
+                  "entity": "switch.pixoo_league_cfl",
+                  "name": "CFL"
+                },
+                {
+                  "entity": "switch.pixoo_league_ncaaf",
+                  "name": "College football"
+                },
+                {
+                  "entity": "switch.pixoo_league_nhl",
+                  "name": "NHL"
+                },
+                {
+                  "entity": "switch.pixoo_league_nba",
+                  "name": "NBA"
+                },
+                {
+                  "entity": "switch.pixoo_league_wnba",
+                  "name": "WNBA"
+                },
+                {
+                  "entity": "switch.pixoo_league_ncaab",
+                  "name": "College basketball"
+                },
+                {
+                  "entity": "switch.pixoo_league_mlb",
+                  "name": "MLB"
+                },
+                {
+                  "entity": "switch.pixoo_league_mls",
+                  "name": "MLS"
+                },
+                {
+                  "entity": "switch.pixoo_league_nwsl",
+                  "name": "NWSL"
+                },
+                {
+                  "entity": "switch.pixoo_league_epl",
+                  "name": "Premier League"
+                },
+                {
+                  "entity": "switch.pixoo_league_ucl",
+                  "name": "Champions League"
+                },
+                {
+                  "entity": "switch.pixoo_league_uel",
+                  "name": "Europa League"
+                },
+                {
+                  "entity": "switch.pixoo_league_laliga",
+                  "name": "La Liga"
+                },
+                {
+                  "entity": "switch.pixoo_league_bundesliga",
+                  "name": "Bundesliga"
+                },
+                {
+                  "entity": "switch.pixoo_league_seriea",
+                  "name": "Serie A"
+                },
+                {
+                  "entity": "switch.pixoo_league_ligue1",
+                  "name": "Ligue 1"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

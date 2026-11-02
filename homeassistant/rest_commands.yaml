@@ -1,0 +1,33 @@
+# Add these under `rest_command:` in Home Assistant's configuration.yaml (replace HOST with the machine running pixoo-display).
+rest_command:
+  # Drawing on the Pixoo 16 through the pixoo-display container (HOST:8017). It keeps a 16x16 frame buffer: paint the pieces with push: false and the last one with
+  # push: true (the default) to show the frame. A pushed drawing stays for `seconds` (default 30; 0 = until pixoo_draw_clear)
+  # and then the normal programme (clock, games, animations) resumes by itself.
+  # The 3x5 font fits 4 characters per row (letters, digits and . , ! ? / % + = * _ ' ( ) # < > @); rows at y=1 and y=9 give two lines.
+  # Colours are r, g, b (0-255). pixoo_fill: r, g, b. pixoo_draw_text: text, x, y, r, g, b. pixoo_draw_rect: x1, y1, x2, y2, r, g, b, fill.
+  # pixoo_draw_pixel: x, y, r, g, b. pixoo_draw_clear: no data, back to the normal programme now. All also take push and seconds.
+  pixoo_fill:
+    url: http://HOST:8017/api/draw/fill
+    method: post
+    content_type: "application/json"
+    payload: '{{ {"r": r | default(0) | int, "g": g | default(0) | int, "b": b | default(0) | int, "push": push | default(true), "seconds": seconds | default(30) | int} | tojson }}'
+  pixoo_draw_text:
+    url: http://HOST:8017/api/draw/text
+    method: post
+    content_type: "application/json"
+    payload: '{{ {"text": text | string, "x": x | default(1) | int, "y": y | default(1) | int, "r": r | default(255) | int, "g": g | default(255) | int, "b": b | default(255) | int, "push": push | default(true), "seconds": seconds | default(30) | int} | tojson }}'
+  pixoo_draw_rect:
+    url: http://HOST:8017/api/draw/rectangle
+    method: post
+    content_type: "application/json"
+    payload: '{{ {"x1": x1 | int, "y1": y1 | int, "x2": x2 | int, "y2": y2 | int, "r": r | default(255) | int, "g": g | default(255) | int, "b": b | default(255) | int, "fill": fill | default(true), "push": push | default(true), "seconds": seconds | default(30) | int} | tojson }}'
+  pixoo_draw_pixel:
+    url: http://HOST:8017/api/draw/pixel
+    method: post
+    content_type: "application/json"
+    payload: '{{ {"x": x | int, "y": y | int, "r": r | default(255) | int, "g": g | default(255) | int, "b": b | default(255) | int, "push": push | default(true), "seconds": seconds | default(30) | int} | tojson }}'
+  pixoo_draw_clear:
+    url: http://HOST:8017/api/draw/clear
+    method: post
+    content_type: "application/json"
+    payload: '{}'

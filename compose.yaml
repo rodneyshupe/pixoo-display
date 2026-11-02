@@ -1,0 +1,25 @@
+# Divoom Pixoo 16 display service. Web app: http://<host>:8017 (LAN only, no login). Needs only the Pixoo's address: no Home
+# Assistant, no accounts. State (settings, picked games, animations) is kept in ${APPDATA_ROOT}/pixoo-display.
+#   cp .env.example .env  &&  docker compose up -d --build
+# .env.secret (MQTT_PASSWORD) is optional and only used for the Home Assistant entities.
+services:
+  pixoo-display:
+    build: .
+    image: ghcr.io/rodneyshupe/pixoo-display:latest
+    container_name: pixoo-display
+    env_file:
+      - .env
+      - path: .env.secret
+        required: false
+    environment:
+      - TZ=${TZ}
+    ports:
+      - ${PORT:-8017}:8017
+    volumes:
+      - ${APPDATA_ROOT}/pixoo-display:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8017/api/health', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped

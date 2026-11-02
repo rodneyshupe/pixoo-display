@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pixoo 16</title>
+<style>
+  :root {
+    --bg: #14161a; --panel: #1d2026; --panel2: #262a32; --line: #333843; --text: #e8eaed; --dim: #9aa0aa;
+    --accent: #4da3ff; --good: #46c37b; --bad: #ff5d5d; --live: #ff4d4d;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: #f2f3f5; --panel: #fff; --panel2: #eceef1; --line: #d5d8de; --text: #1b1e24; --dim: #626976; --accent: #1f6fd1; --good: #1c8f4f; --bad: #d63a3a; --live: #d62f2f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 16px; }
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  h1 { font-size: 20px; margin: 0; }
+  h2 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--panel2); font-size: 13px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+  .dot.on { background: var(--good); } .dot.off { background: var(--bad); }
+  .now { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; }
+  canvas { width: 192px; height: 192px; image-rendering: pixelated; background: #000; border-radius: 8px; border: 1px solid var(--line); flex: none; }
+  .controls { flex: 1; min-width: 240px; display: grid; gap: 12px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .seg button { background: var(--panel2); color: var(--text); border: 0; padding: 8px 16px; font: inherit; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button.active { background: var(--accent); color: #fff; }
+  .tabs { display: flex; gap: 4px; margin: 0 0 14px; border-bottom: 1px solid var(--line); }
+  .tabs button { background: none; color: var(--dim); border: 0; border-bottom: 3px solid transparent; padding: 10px 18px; font: inherit; font-size: 16px; cursor: pointer; margin-bottom: -1px; }
+  .tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
+  .tab[hidden] { display: none; }
+  label.row { display: grid; grid-template-columns: 200px 1fr 44px; align-items: center; gap: 10px; color: var(--dim); margin-bottom: 8px; }
+  label.row output { color: var(--text); text-align: right; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  input[type=text] { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font: inherit; min-width: 240px; }
+  .label { font-size: 17px; margin: 0 0 4px; }
+  .dim { color: var(--dim); }
+  .btn, .filters button, .datebar button { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 5px 12px; font: inherit; cursor: pointer; }
+  .filters { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
+  .filters button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .datebar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+  .datebar input[type=date] { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; font: inherit; color-scheme: dark light; }
+  .datebar .title { font-size: 17px; margin-left: 8px; }
+  .league { margin-top: 14px; }
+  .league h3 { margin: 0 0 4px; font-size: 14px; color: var(--dim); }
+  .game { display: grid; grid-template-columns: 28px 1fr 150px; gap: 8px; align-items: center; padding: 7px 4px; border-top: 1px solid var(--line); }
+  .game.sel { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  .game input[type=checkbox], .anim input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+  .teams { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .team { display: inline-flex; align-items: center; font-weight: 600; cursor: pointer; position: relative; }
+  .team input[type=color] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; padding: 0; border: 0; }
+  .star { cursor: pointer; background: none; border: 0; color: var(--dim); font-size: 15px; padding: 0 2px; }
+  .star.on { color: #ffc83d; }
+  .score { font-variant-numeric: tabular-nums; min-width: 1.4em; text-align: right; }
+  .status { text-align: right; color: var(--dim); font-size: 13px; }
+  .status.live { color: var(--live); font-weight: 600; }
+  .followed { display: flex; flex-wrap: wrap; gap: 8px; }
+  .team-chip { display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 999px; background: var(--panel2); border: 1px solid var(--line); cursor: pointer; user-select: none; }
+  .team-chip.on { border-color: var(--accent); }
+  .team-chip .x { color: var(--dim); background: none; border: 0; cursor: pointer; font-size: 14px; padding: 0; }
+  .swatch { width: 14px; height: 14px; border-radius: 4px; display: inline-block; border: 1px solid var(--line); }
+  .picks { display: grid; gap: 6px; }
+  .pick { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 8px; background: var(--panel2); }
+  .pick .x { margin-left: auto; color: var(--dim); background: none; border: 0; cursor: pointer; font-size: 14px; }
+  .anims { display: grid; gap: 8px; }
+  .anim { display: grid; grid-template-columns: 22px 22px 64px 1fr auto; gap: 10px; align-items: center; padding: 6px 10px; border-radius: 10px; background: var(--panel2); border: 1px solid transparent; }
+  .anim.off { opacity: .5; }
+  .anim.over { border-color: var(--accent); }
+  .anim.dragging { opacity: .35; }
+  .anim .grip { cursor: grab; color: var(--dim); font-size: 18px; text-align: center; user-select: none; }
+  .anim img { width: 56px; height: 56px; image-rendering: pixelated; background: #000; border-radius: 6px; display: block; }
+  .anim .btns { display: flex; gap: 4px; }
+  .anim .btns button { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; font-size: 14px; }
+  .city { display: grid; grid-template-columns: 22px 22px 1fr 64px auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--panel2); border: 1px solid transparent; }
+  .city.off { opacity: .5; }
+  .city input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+  .city.over { border-color: var(--accent); }
+  .city.dragging { opacity: .35; }
+  .city .grip { cursor: grab; color: var(--dim); font-size: 18px; text-align: center; user-select: none; }
+  .city input[type=text] { min-width: 0; width: 64px; text-align: center; text-transform: uppercase; font-weight: 600; padding: 6px 4px; }
+  .city .btns { display: flex; gap: 4px; }
+  .city .btns button { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; font-size: 14px; }
+  .city .btns button:disabled { opacity: .35; cursor: default; }
+  .cd { display: grid; grid-template-columns: 22px 22px 1fr 70px auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--panel2); }
+  .cd.off { opacity: .5; }
+  .cd input[type=text] { min-width: 0; width: 70px; text-align: center; text-transform: uppercase; font-weight: 600; padding: 6px 4px; }
+  .cd input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+  .cd .btns { display: flex; gap: 4px; }
+  .cd .btns button { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; width: 30px; height: 30px; cursor: pointer; }
+  .cd .btns button:disabled { opacity: .35; cursor: default; }
+  .addcd { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+  .addcd input[type=datetime-local] { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; color-scheme: dark light; }
+  .addcd input[type=color] { width: 38px; height: 34px; border: 1px solid var(--line); border-radius: 8px; background: none; padding: 2px; }
+  .styles { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; }
+  .style { position: relative; background: var(--panel2); color: var(--text); border: 2px solid transparent; border-radius: 10px; padding: 12px 6px 8px; text-align: center; cursor: pointer; font: inherit; }
+  .style.active { border-color: var(--accent); }
+  .style b { display: block; font-size: 20px; }
+  .style small { color: var(--dim); display: block; min-height: 1.2em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .style .fav { position: absolute; top: 2px; right: 6px; font-size: 16px; color: var(--dim); }
+  .style .fav.on { color: #ffc83d; }
+  .readout { font-size: 56px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: .02em; margin: 4px 0 14px; }
+  .readout.run { color: #ffc83d; } .readout.done { color: var(--good); }
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 14px; }
+  .presets .btn { padding: 9px 16px; font-size: 16px; }
+  .timerrow { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .timerrow input[type=number] { width: 78px; background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: inherit; font-size: 16px; text-align: center; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .err { color: var(--bad); font-size: 13px; margin-top: 8px; }
+  .results { display: grid; gap: 6px; margin-top: 8px; }
+  .results button { text-align: left; }
+  @media (max-width: 560px) { .game { grid-template-columns: 28px 1fr; } .status { grid-column: 2; text-align: left; } label.row { grid-template-columns: 120px 1fr 40px; } .anim { grid-template-columns: 22px 22px 56px 1fr; } .anim .btns { grid-column: 4; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Pixoo 16</h1>
+    <span class="chip"><span class="dot" id="dev-dot"></span><span id="dev-text">connecting</span></span>
+    <span class="chip" id="mqtt-chip" hidden></span>
+    <span class="chip dim" id="clock"></span>
+  </header>
+
+  <section>
+    <h2>Now showing</h2>
+    <div class="now">
+      <canvas id="screen" width="16" height="16"></canvas>
+      <div class="controls">
+        <div>
+          <p class="label" id="now-label">&nbsp;</p>
+          <span class="dim" id="now-sub"></span>
+        </div>
+        <div id="drawing" class="chip" hidden style="justify-self:start;gap:10px">Showing a custom drawing <button class="btn" id="resume">Back to normal</button></div>
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+          <span class="seg" id="power"><button data-on="1">On</button><button data-on="0">Off</button></span>
+          <label class="row" style="margin:0;grid-template-columns:auto minmax(120px,1fr) 44px;flex:1;min-width:220px">Brightness <input type="range" id="bright" min="1" max="100" step="1"><output id="bright-out"></output></label>
+        </div>
+        <div class="seg" id="modes">
+          <button data-mode="clock">Clock</button>
+          <button data-mode="scores">Games</button>
+          <button data-mode="gifs">Animations</button>
+          <button data-mode="countdown">Countdown</button>
+          <button data-mode="visualizer">Visualizer</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="sports">Sports</button>
+    <button data-tab="anims">Animations</button>
+    <button data-tab="clock">Clock</button>
+    <button data-tab="countdown">Countdown</button>
+    <button data-tab="music">Music</button>
+    <button data-tab="timer">Timer</button>
+  </nav>
+
+  <!-- ===================== Sports ===================== -->
+  <div class="tab" id="tab-sports">
+    <section>
+      <h2>In the rotation today <span class="dim" id="rot-count"></span></h2>
+      <div id="rotation"></div>
+      <p class="dim" style="margin:8px 0 0" id="rot-note"></p>
+    </section>
+
+    <section>
+      <h2>Rotation timing</h2>
+      <label class="row">Seconds per game (2 s steps) <input type="range" id="dwell" min="4" max="60" step="2"><output id="dwell-out"></output></label>
+      <label class="row" style="margin-bottom:0">Keep finals for (hours) <input type="range" id="final" min="0" max="12" step="1"><output id="final-out"></output></label>
+    </section>
+
+    <section id="games-section">
+      <h2>Games <span class="dim" id="games-count"></span></h2>
+      <div class="datebar">
+        <button id="d-prev" title="Previous day">‹</button>
+        <input type="date" id="d-pick">
+        <button id="d-next" title="Next day">›</button>
+        <button id="d-today">Today</button>
+        <span class="title" id="d-title"></span>
+      </div>
+      <div class="filters" id="filters">
+        <button data-f="all" class="active">All</button>
+        <button data-f="selected">Showing</button>
+        <button data-f="live">Live</button>
+      </div>
+      <p class="dim" style="margin:0 0 6px">Tick a game to add it. Games ticked for another day appear on the Pixoo that day (only the current day's games are cycled). A ☆ follows a team, so its game is added every day. Click a team's letters to change its colour.</p>
+      <div id="games"></div>
+      <div class="err" id="errors"></div>
+    </section>
+
+    <section>
+      <h2>Picked games</h2>
+      <div class="picks" id="picks"></div>
+    </section>
+
+    <section>
+      <h2>Followed teams</h2>
+      <div class="followed" id="teams"></div>
+    </section>
+
+    <section>
+      <h2>Leagues</h2>
+      <div class="followed" id="leagues"></div>
+    </section>
+
+    <section>
+      <h2>Custom team colours</h2>
+      <div class="followed" id="colours"></div>
+    </section>
+  </div>
+
+  <!-- ===================== Animations ===================== -->
+  <div class="tab" id="tab-anims" hidden>
+    <section>
+      <h2>Playback</h2>
+      <label class="row" style="margin-bottom:0">Minutes per animation <input type="range" id="gifmin" min="1" max="30" step="1"><output id="gifmin-out"></output></label>
+    </section>
+    <section>
+      <h2>Animations <span class="dim" id="anim-count"></span></h2>
+      <p class="dim" style="margin:0 0 10px">They play in this order, one after another. Untick one to skip it. Drag a row by its ⠿ handle (or use ▲ ▼) to reorder.</p>
+      <div class="anims" id="anims"></div>
+      <p style="margin:14px 0 0"><label class="btn">Add a GIF… <input type="file" id="upload" accept="image/gif" hidden></label>
+        <span class="dim">Any size; it is shrunk to 16×16. The file name is the name.</span></p>
+    </section>
+  </div>
+
+  <!-- ===================== Clock ===================== -->
+  <div class="tab" id="tab-clock" hidden>
+    <section>
+      <h2>Display</h2>
+      <p style="margin:0 0 12px"><span class="seg" id="units"><button data-u="C">°C</button><button data-u="F">°F</button></span></p>
+      <label class="row" style="margin-bottom:0">Seconds per city (2 s steps) <input type="range" id="cityseconds" min="4" max="60" step="2"><output id="cityseconds-out"></output></label>
+    </section>
+    <section>
+      <h2>Cities <span class="dim" id="city-count"></span></h2>
+      <p class="dim" style="margin:0 0 10px">The clock shows each city's weather and its local time, one after another in this order. <span id="code-note">With more than one, a short frame with the city's 3-letter code comes first (edit the code in the box). </span>Untick a city to skip it (it stays in the list). Drag a row by its ⠿ handle (or use ▲ ▼) to reorder.</p>
+      <div class="anims" id="cities"></div>
+      <p style="margin:14px 0 6px"><input type="text" id="place" placeholder="Add a city…" autocomplete="off"></p>
+      <div class="results" id="places"></div>
+      <p class="dim" style="margin:14px 0 0">Weather from <a href="https://open-meteo.com/" target="_blank" rel="noopener" style="color:var(--accent)">Open-Meteo</a> (free, no account), refreshed every 10 minutes.</p>
+    </section>
+  </div>
+  <!-- ===================== Countdown ===================== -->
+  <div class="tab" id="tab-countdown" hidden>
+    <section>
+      <h2>Display</h2>
+      <p class="dim" style="margin:0 0 10px">The Countdown mode (switch to it above) shows each countdown that is on, one after another: its short name, then the days, hours or minutes left.</p>
+      <label class="row" style="margin-bottom:0">Seconds per countdown (2 s steps) <input type="range" id="cdseconds" min="4" max="60" step="2"><output id="cdseconds-out"></output></label>
+    </section>
+    <section>
+      <h2>Countdowns <span class="dim" id="cd-count"></span></h2>
+      <div class="anims" id="countdowns"></div>
+      <div class="addcd">
+        <input type="text" id="cd-name" placeholder="Name, e.g. Christmas" style="min-width:200px">
+        <input type="datetime-local" id="cd-at">
+        <input type="color" id="cd-colour" value="#ffc83d" title="Colour">
+        <label class="btn" style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="cd-yearly"> every year</label>
+        <button class="btn" id="cd-add">Add</button>
+      </div>
+      <p class="dim" style="margin:10px 0 0">A one-off countdown stays for the day it happens, then drops out. A yearly one counts down to its next date (birthdays, holidays). The code (up to 4 letters) is the short name shown on the Pixoo.</p>
+    </section>
+  </div>
+
+  <!-- ===================== Timer ===================== -->
+  <div class="tab" id="tab-timer" hidden>
+    <section>
+      <h2>Timer</h2>
+      <p class="dim" style="margin:0 0 6px">The Pixoo's own timer: it shows the countdown on screen and beeps when it reaches zero, then the usual programme comes back.</p>
+      <div class="readout" id="t-readout">0:00</div>
+      <p class="dim" id="t-status" style="margin:-8px 0 12px"></p>
+      <div class="presets" id="t-presets"></div>
+      <div class="timerrow">
+        <input type="number" id="t-min" min="0" max="99" value="5" title="Minutes"> <span class="dim">min</span>
+        <input type="number" id="t-sec" min="0" max="59" value="0" title="Seconds"> <span class="dim">sec</span>
+        <button class="btn primary" id="t-start">Start</button>
+        <button class="btn" id="t-pause">Pause</button>
+        <button class="btn" id="t-cancel">Cancel</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== Music ===================== -->
+  <div class="tab" id="tab-music" hidden>
+    <section>
+      <h2>Music visualizer</h2>
+      <p class="dim" style="margin:0 0 12px">The Pixoo draws this itself, reacting to sound with its own microphone. Pick a style below (it switches to the Visualizer mode and shows it at once). The Pixoo does not say how many styles it has, so step through them and star the ones you like.</p>
+      <div class="styles" id="styles"></div>
+      <p style="margin:14px 0 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn" id="vis-prev">‹ Previous</button><button class="btn" id="vis-next">Next ›</button>
+        <input type="text" id="vis-name" placeholder="Name this style…" style="min-width:180px">
+        <button class="btn" id="vis-fav">☆ Favourite</button>
+      </p>
+    </section>
+    <section>
+      <h2>Cycle through favourites</h2>
+      <p style="margin:0 0 10px"><label class="btn" style="display:inline-flex;gap:8px;align-items:center"><input type="checkbox" id="vis-cycle"> Change style automatically</label></p>
+      <label class="row"> Seconds per style <input type="range" id="vis-secs" min="5" max="300" step="5"><output id="vis-secs-out"></output></label>
+      <label class="row" style="margin-bottom:0"> Styles to offer <input type="range" id="vis-count" min="1" max="32" step="1"><output id="vis-count-out"></output></label>
+    </section>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let state = null, games = null, filter = "all", day = null;   // day: YYYY-MM-DD being browsed, null = today
+
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.status);
+  return r.json();
+}
+const fmtTime = (iso) => new Date(iso).toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
+const fmtDay = (iso) => new Date(iso + "T12:00:00").toLocaleDateString([], {weekday: "long", month: "short", day: "numeric"});
+const addDays = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+
+// ---- tabs
+function showTab(name) {
+  if (!document.getElementById("tab-" + name)) name = "sports";
+  document.querySelectorAll(".tab").forEach((t) => t.hidden = t.id !== "tab-" + name);
+  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
+  try { localStorage.setItem("pixoo-tab", name); } catch (e) {}
+  history.replaceState(null, "", "#" + name);
+}
+document.querySelectorAll("#tabs button").forEach((b) => b.onclick = () => showTab(b.dataset.tab));
+let startTab = location.hash.slice(1);
+try { startTab = startTab || localStorage.getItem("pixoo-tab"); } catch (e) {}
+showTab(startTab || "sports");
+
+// ---- the screen
+function drawScreen(frame) {
+  const c = $("screen"), ctx = c.getContext("2d");
+  ctx.clearRect(0, 0, 16, 16);
+  if (!frame) return;
+  frame.forEach((row, y) => row.forEach((col, x) => { ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1); }));
+}
+
+// The Pixoo loops the games by itself; the preview shows the same loop (one picture per game, `dwell` seconds each).
+let previewTimer = null, previewKey = "";
+function startPreview() {
+  const n = state.now, list = n.playlist || [];
+  const secs = n.interval || state.settings.dwell;                       // seconds each picture of the loop is held
+  const key = JSON.stringify([n.frame, list.map((g) => [g.label, g.frame]), secs]);
+  if (key === previewKey) return;
+  previewKey = key;
+  clearTimeout(previewTimer);
+  if (list.length < 2) {
+    drawScreen(n.frame);
+    $("now-label").textContent = list.length ? list[0].label : (n.label || "Clock");
+    return;
+  }
+  let i = 0;
+  const step = () => {
+    const g = list[i++ % list.length];
+    drawScreen(g.frame);
+    $("now-label").textContent = g.label;
+    previewTimer = setTimeout(step, Math.max(2, g.secs || secs) * 1000);
+  };
+  step();
+}
+
+function renderState() {
+  if (!state) return;
+  const s = state.settings, d = state.device;
+  $("dev-dot").className = "dot " + (d.online === null ? "" : d.online ? "on" : "off");
+  $("dev-text").textContent = d.dry_run ? "no device (dry run)" : d.online === null ? "connecting" : d.online ? "Pixoo online" : "Pixoo offline: " + d.error;
+  const m = state.mqtt;
+  $("mqtt-chip").hidden = !m.enabled;
+  if (m.enabled) $("mqtt-chip").innerHTML = '<span class="dot ' + (m.connected ? "on" : "off") + '"></span>Home Assistant';
+  $("clock").textContent = new Date(state.time).toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
+  document.querySelectorAll("#power button").forEach((b) => b.onclick = () => post("/api/settings", {screen_on: b.dataset.on === "1"}));
+$("bright").oninput = () => { $("bright-out").textContent = $("bright").value; };
+$("bright").onchange = () => post("/api/settings", {brightness: +$("bright").value});
+$("resume").onclick = () => post("/api/draw/clear", {});
+document.querySelectorAll("#modes button").forEach((b) => b.classList.toggle("active", b.dataset.mode === s.mode));
+  startPreview();
+  $("drawing").hidden = !state.drawing;
+  document.querySelectorAll("#power button").forEach((b) => b.classList.toggle("active", (b.dataset.on === "1") === s.screen_on));
+  if (document.activeElement !== $("bright")) $("bright").value = s.brightness || 40;
+  $("bright-out").textContent = s.brightness || "…";
+  const onCount = state.animations.filter((a) => a.on).length;
+  $("now-sub").textContent = {clock: state.cities.filter((c) => c.on).length + " cit" + (state.cities.filter((c) => c.on).length === 1 ? "y" : "ies") + ": weather and local time", countdown: state.settings.countdowns.filter((c) => c.on).length + " countdowns", visualizer: "The Pixoo's own music visualizer", scores: state.selected + " game" + (state.selected === 1 ? "" : "s") + " in the rotation today", gifs: onCount + " of " + state.animations.length + " animations"}[s.mode] +
+    (s.mode === "scores" && state.now.mode === "clock" ? " (nothing on, showing the clock)" : "");
+  for (const [id, key] of [["dwell", "dwell"], ["final", "final_hours"], ["gifmin", "gif_minutes"], ["cityseconds", "city_seconds"]]) {
+    if (document.activeElement !== $(id)) $(id).value = s[key];
+    $(id + "-out").textContent = s[key];
+  }
+  renderRotation(); renderTeams(); renderLeagues(); renderColours(); renderPicks(); renderAnims(); renderCities(); renderCountdowns(); renderMusic(); renderTimer();
+  if (document.activeElement !== $("cdseconds")) $("cdseconds").value = s.countdown_seconds; $("cdseconds-out").textContent = s.countdown_seconds;
+}
+
+// The games the Pixoo is looping through right now, in order, and why each one is there.
+function renderRotation() {
+  const list = state.rotation, el = $("rotation");
+  $("rot-count").textContent = "(" + list.length + ")";
+  el.innerHTML = "";
+  list.forEach((g) => {
+    const st = statusOf(g), row = document.createElement("div");
+    row.className = "game sel";
+    const side = (t) => '<span class="team" style="color:' + t.colour + '">' + esc(t.abbr) + '</span>' + (g.state === "pre" ? "" : '<span class="score">' + t.score + "</span>");
+    const why = g.pinned ? "picked" : "★ followed team";
+    row.innerHTML = '<span class="dim">' + (list.indexOf(g) + 1) + '</span><div class="teams">' + side(g.first) + '<span class="dim">' + g.sep + '</span>' + side(g.second) +
+      '<span class="dim" style="font-size:13px">' + esc(g.league_name) + " · " + why + '</span></div><div class="status' + (st.live ? " live" : "") + '">' + (st.live ? "● " : "") + esc(st.text) +
+      (g.pinned ? ' <button class="star" title="Remove this pick" data-id="' + esc(g.id) + '">✕</button>' : "") + "</div>";
+    row.querySelectorAll("button[data-id]").forEach((b) => b.onclick = () => post("/api/pin", {id: b.dataset.id, pinned: false}));
+    el.appendChild(row);
+  });
+  if (!list.length) el.innerHTML = '<p class="dim" style="margin:0">Nothing selected for today. Follow a team or tick a game below; until then the Pixoo shows the clock.</p>';
+  const per = state.settings.dwell, n = list.length;
+  $("rot-note").textContent = n > 1 ? "Each game is shown for about " + per + " s, so the loop takes about " + n * per + " s. It is only re-sent to the Pixoo when something changes." : "";
+}
+
+function chip(text, on, onclick, onremove) {
+  const c = document.createElement("span");
+  c.className = "team-chip" + (on ? " on" : "");
+  c.innerHTML = "<span>" + text + "</span>" + (onremove ? '<button class="x" title="Remove">✕</button>' : "");
+  c.firstChild.onclick = onclick;
+  if (onremove) c.querySelector(".x").onclick = (e) => { e.stopPropagation(); onremove(); };
+  return c;
+}
+
+function renderTeams() {
+  const el = $("teams");
+  el.innerHTML = "";
+  for (const t of state.settings.teams)
+    el.appendChild(chip((t.on ? "★ " : "☆ ") + esc(t.name) + ' <small class="dim">' + esc(t.key) + "</small>", t.on,
+      () => post("/api/team", {key: t.key, name: t.name, on: !t.on}), () => post("/api/team", {key: t.key, remove: true})));
+  if (!state.settings.teams.length) el.innerHTML = '<span class="dim">None yet. Click a ☆ next to a team in the list above.</span>';
+}
+
+function renderLeagues() {
+  const el = $("leagues");
+  el.innerHTML = "";
+  for (const l of state.leagues)
+    el.appendChild(chip((l.on ? "✓ " : "") + esc(l.name), l.on, () => post("/api/league", {key: l.key, on: !l.on})));
+}
+
+function renderColours() {
+  const el = $("colours");
+  el.innerHTML = "";
+  const entries = Object.entries(state.colours);
+  for (const [key, col] of entries)
+    el.appendChild(chip('<span class="swatch" style="background:' + col + '"></span> ' + esc(key), false, () => {}, () => post("/api/colour", {key, colour: null})));
+  if (!entries.length) el.innerHTML = '<span class="dim">None. Click a team\'s letters in the games list to pick its colour.</span>';
+}
+
+function renderPicks() {
+  const el = $("picks");
+  el.innerHTML = "";
+  for (const p of state.picks) {
+    const d = document.createElement("div");
+    d.className = "pick";
+    d.innerHTML = "<span>" + (p.day === state.time.slice(0, 10) ? "Today" : fmtDay(p.day)) + '</span><span class="dim">' + esc(p.label || p.id) + '</span><button class="x" title="Remove">✕</button>';
+    d.querySelector(".x").onclick = () => post("/api/pin", {id: p.id, pinned: false});
+    el.appendChild(d);
+  }
+  if (!state.picks.length) el.innerHTML = '<span class="dim">No games picked. Tick a game above, on any day.</span>';
+}
+
+// ---- animations: order, on/off, drag to reorder
+let animSig = "", dragName = null;
+function saveAnims(list) {
+  return post("/api/animations", {order: list.map((a) => a.name), off: list.filter((a) => !a.on).map((a) => a.name)});
+}
+function renderAnims() {
+  const list = state.animations;
+  const sig = JSON.stringify(list);
+  $("anim-count").textContent = "(" + list.filter((a) => a.on).length + " of " + list.length + " on)";
+  if (sig === animSig || dragName) return;          // do not rebuild the list in the middle of a drag
+  animSig = sig;
+  const el = $("anims");
+  el.innerHTML = "";
+  list.forEach((a, i) => {
+    const row = document.createElement("div");
+    row.className = "anim" + (a.on ? "" : " off");
+    row.draggable = true;
+    row.dataset.name = a.name;
+    row.innerHTML = '<span class="grip" title="Drag to reorder">⠿</span><input type="checkbox" ' + (a.on ? "checked" : "") + ' title="Use this animation">' +
+      '<img src="/api/sprite?name=' + encodeURIComponent(a.name) + '" alt=""><span>' + esc(a.name) + '</span>' +
+      '<span class="btns"><button title="Move up"' + (i === 0 ? " disabled" : "") + '>▲</button><button title="Move down"' + (i === list.length - 1 ? " disabled" : "") +
+      '>▼</button><button title="Delete">✕</button></span>';
+    row.querySelector("input").onchange = (e) => saveAnims(list.map((x) => x.name === a.name ? {...x, on: e.target.checked} : x));
+    const [up, down, del] = row.querySelectorAll(".btns button");
+    const move = (d) => { const l = [...list]; [l[i], l[i + d]] = [l[i + d], l[i]]; saveAnims(l); };
+    up.onclick = () => move(-1);
+    down.onclick = () => move(1);
+    del.onclick = async () => { if (confirm("Delete the " + a.name + " animation?")) await post("/api/sprite/delete", {name: a.name}); };
+    row.ondragstart = (e) => { dragName = a.name; row.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", a.name); };
+    row.ondragend = () => { dragName = null; row.classList.remove("dragging"); animSig = ""; renderAnims(); };
+    row.ondragover = (e) => { if (dragName && dragName !== a.name) { e.preventDefault(); row.classList.add("over"); } };
+    row.ondragleave = () => row.classList.remove("over");
+    row.ondrop = (e) => {
+      e.preventDefault();
+      if (!dragName || dragName === a.name) return;
+      const l = list.filter((x) => x.name !== dragName);
+      l.splice(l.findIndex((x) => x.name === a.name), 0, list.find((x) => x.name === dragName));
+      dragName = null;
+      saveAnims(l);
+    };
+    el.appendChild(row);
+  });
+  if (!list.length) el.innerHTML = '<span class="dim">No animations yet. Add a GIF below.</span>';
+}
+
+// ---- clock: cities (order, code, remove, add) and units
+let citySig = "", dragCity = null;
+const cityPayload = (l) => l.map((c) => ({name: c.name, lat: c.lat, lon: c.lon, code: c.code, on: c.on !== false}));
+const condText = (c) => c ? String(c).replace(/-/g, " ") : "";
+function tempText(t) { return t === null || t === undefined ? "—" : Math.round(state.settings.units === "F" ? t * 9 / 5 + 32 : t) + "°" + state.settings.units; }
+function renderCities() {
+  document.querySelectorAll("#units button").forEach((b) => b.classList.toggle("active", b.dataset.u === state.settings.units));
+  const list = state.cities;
+  const onCount = list.filter((c) => c.on).length;
+  $("city-count").textContent = "(" + onCount + " of " + list.length + " on)";
+  $("code-note").hidden = list.length < 2;
+  const sig = JSON.stringify([list, state.settings.units]);
+  if (sig === citySig || dragCity || document.activeElement.closest && document.activeElement.closest("#cities")) return;
+  citySig = sig;
+  const el = $("cities");
+  el.innerHTML = "";
+  list.forEach((c, i) => {
+    const row = document.createElement("div");
+    row.className = "city" + (c.on ? "" : " off");
+    row.draggable = true;
+    row.innerHTML = '<span class="grip" title="Drag to reorder">⠿</span><input type="checkbox" class="use" ' + (c.on ? "checked" : "") + (c.on && onCount === 1 ? " disabled" : "") +
+      ' title="' + (c.on && onCount === 1 ? "At least one city must stay on" : "Show this city") + '"><div><div>' + esc(c.name) + '</div><div class="dim" style="font-size:13px">' +
+      (c.temp === null || c.temp === undefined ? "reading the weather…" : tempText(c.temp) + ", " + condText(c.condition) + " · " + (c.local || "")) +
+      '</div></div>' + (list.length > 1 ? '<input type="text" maxlength="3" value="' + esc(c.code) + '" title="3-letter code shown before this city">' : '<span></span>') + '<span class="btns"><button title="Move up"' + (i === 0 ? " disabled" : "") +
+      '>▲</button><button title="Move down"' + (i === list.length - 1 ? " disabled" : "") + '>▼</button><button title="Remove"' + (list.length === 1 ? " disabled" : "") + '>✕</button></span>';
+    const [up, down, del] = row.querySelectorAll(".btns button");
+    const move = (d) => { const l = [...list]; [l[i], l[i + d]] = [l[i + d], l[i]]; post("/api/cities", {cities: cityPayload(l)}); };
+    up.onclick = () => move(-1);
+    down.onclick = () => move(1);
+    del.onclick = () => post("/api/cities", {cities: cityPayload(list.filter((x) => x !== c))});
+    row.querySelector("input.use").onchange = (e) => post("/api/cities", {cities: cityPayload(list.map((x) => x === c ? {...x, on: e.target.checked} : x))});
+    if (row.querySelector("input[type=text]")) row.querySelector("input[type=text]").onchange = (e) => post("/api/cities", {cities: cityPayload(list.map((x) => x === c ? {...x, code: e.target.value} : x))});
+    row.ondragstart = (e) => { dragCity = c; row.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", c.name); };
+    row.ondragend = () => { dragCity = null; row.classList.remove("dragging"); citySig = ""; renderCities(); };
+    row.ondragover = (e) => { if (dragCity && dragCity !== c) { e.preventDefault(); row.classList.add("over"); } };
+    row.ondragleave = () => row.classList.remove("over");
+    row.ondrop = (e) => {
+      e.preventDefault();
+      if (!dragCity || dragCity === c) return;
+      const l = list.filter((x) => x !== dragCity);
+      l.splice(l.indexOf(c), 0, dragCity);
+      dragCity = null;
+      post("/api/cities", {cities: cityPayload(l)});
+    };
+    el.appendChild(row);
+  });
+}
+document.querySelectorAll("#units button").forEach((b) => b.onclick = () => post("/api/settings", {units: b.dataset.u}));
+let placeTimer = null;
+$("place").oninput = (e) => {
+  clearTimeout(placeTimer);
+  const q = e.target.value.trim();
+  if (q.length < 2) { $("places").innerHTML = ""; return; }
+  placeTimer = setTimeout(async () => {
+    try {
+      const r = await api("/api/weather/search?q=" + encodeURIComponent(q));
+      const el = $("places");
+      el.innerHTML = "";
+      for (const p of r.places) {
+        const b = document.createElement("button");
+        b.className = "btn";
+        b.textContent = p.name;
+        b.onclick = async () => {
+          if (state.cities.some((c) => Math.abs(c.lat - p.lat) < 0.01 && Math.abs(c.lon - p.lon) < 0.01)) { alert("That city is already in the list."); return; }
+          await post("/api/cities", {cities: cityPayload(state.cities).concat([{name: p.name, lat: p.lat, lon: p.lon, code: ""}])});
+          el.innerHTML = ""; $("place").value = "";
+        };
+        el.appendChild(b);
+      }
+      if (!r.places.length) el.innerHTML = '<span class="dim">No match.</span>';
+    } catch (err) { $("places").innerHTML = '<span class="err">' + esc(err.message) + "</span>"; }
+  }, 350);
+};
+
+// ---- games
+function statusOf(g) {
+  if (g.state === "pre") return {text: fmtTime(g.start), live: false};
+  if (g.state === "post") return {text: "Final", live: false};
+  return {text: g.detail || (g.clock ? g.clock : "Live"), live: true};
+}
+
+function renderGames() {
+  if (!games) return;
+  const el = $("games");
+  el.innerHTML = "";
+  const isToday = games.date === games.today;
+  $("d-pick").value = games.date;
+  $("d-title").textContent = isToday ? "Today" : fmtDay(games.date);
+  let list = games.games;
+  if (filter === "selected") list = list.filter((g) => g.selected);
+  if (filter === "live") list = list.filter((g) => g.state === "in");
+  $("games-count").textContent = "(" + games.games.length + ")";
+  for (const lg of [...new Set(list.map((g) => g.league_name))]) {
+    const wrap = document.createElement("div");
+    wrap.className = "league";
+    wrap.innerHTML = "<h3>" + esc(lg) + "</h3>";
+    for (const g of list.filter((x) => x.league_name === lg)) {
+      const st = statusOf(g);
+      const row = document.createElement("div");
+      row.className = "game" + (g.selected ? " sel" : "");
+      const teamHtml = (t, score) => '<label class="team" style="color:' + t.colour + '" title="Click to change ' + esc(t.name) + '\'s colour">' + esc(t.abbr) +
+        '<input type="color" value="' + t.colour + '" data-key="' + esc(t.key) + '"></label><button class="star' + (t.followed ? " on" : "") +
+        '" data-key="' + esc(t.key) + '" data-name="' + esc(t.name) + '" title="' + (t.followed ? "Unfollow " : "Follow ") + esc(t.name) + '">' + (t.followed ? "★" : "☆") + '</button>' +
+        (g.state === "pre" ? "" : '<span class="score">' + score + "</span>");
+      row.innerHTML = '<input type="checkbox" ' + (g.pinned ? "checked" : "") + ' title="Show this game"><div class="teams">' + teamHtml(g.first, g.first.score) +
+        '<span class="dim">' + g.sep + '</span>' + teamHtml(g.second, g.second.score) + '</div><div class="status' + (st.live ? " live" : "") + '">' + (st.live ? "● " : "") + esc(st.text) + (g.selected && !g.pinned ? ' <span title="a followed team">★</span>' : "") + "</div>";
+      row.querySelector("input[type=checkbox]").onchange = (e) => post("/api/pin", {id: g.id, pinned: e.target.checked, day: g.start.slice(0, 10), label: g.label});
+      row.querySelectorAll(".star").forEach((b) => b.onclick = () => post("/api/team", {key: b.dataset.key, name: b.dataset.name, on: !b.classList.contains("on")}));
+      row.querySelectorAll("input[type=color]").forEach((c) => c.onchange = () => post("/api/colour", {key: c.dataset.key, colour: c.value}));
+      wrap.appendChild(row);
+    }
+    el.appendChild(wrap);
+  }
+  if (!list.length) el.innerHTML = '<p class="dim">' + (games.games.length ? "Nothing matches this filter." : "No games this day in the leagues that are on.") + "</p>";
+  $("errors").textContent = Object.entries(games.errors).map(([k, v]) => k.toUpperCase() + ": " + v).join("  ·  ");
+}
+
+async function post(path, body) {
+  try { await api(path, body); } catch (e) { alert(e.message); }
+  await Promise.all([loadState(), loadGames()]);
+}
+async function loadState() { try { state = await api("/api/state"); renderState(); } catch (e) { $("dev-text").textContent = "service not answering"; } }
+let gamesBusy = false;
+async function loadGames() {
+  if (gamesBusy) return;
+  gamesBusy = true;
+  try { games = await api("/api/games" + (day ? "?date=" + day : "")); renderGames(); } catch (e) {} finally { gamesBusy = false; }
+}
+function goDay(d) { day = d; games = null; $("games").innerHTML = '<p class="dim">Loading…</p>'; loadGames(); }
+
+document.querySelectorAll("#modes button").forEach((b) => b.onclick = () => post("/api/settings", {mode: b.dataset.mode}));
+for (const [id, key] of [["dwell", "dwell"], ["final", "final_hours"], ["gifmin", "gif_minutes"], ["cityseconds", "city_seconds"]]) {
+  $(id).oninput = () => { $(id + "-out").textContent = $(id).value; };
+  $(id).onchange = () => post("/api/settings", {[key]: +$(id).value});
+}
+document.querySelectorAll("#filters button").forEach((b) => b.onclick = () => {
+  filter = b.dataset.f;
+  document.querySelectorAll("#filters button").forEach((x) => x.classList.toggle("active", x === b));
+  renderGames();
+});
+$("d-prev").onclick = () => goDay(addDays(games ? games.date : state.time.slice(0, 10), -1));
+$("d-next").onclick = () => goDay(addDays(games ? games.date : state.time.slice(0, 10), 1));
+$("d-today").onclick = () => goDay(null);
+$("d-pick").onchange = (e) => e.target.value && goDay(e.target.value);
+$("upload").onchange = async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const name = f.name.replace(/\.gif$/i, "").toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+  const r = await fetch("/api/sprite?name=" + encodeURIComponent(name), {method: "POST", body: await f.arrayBuffer()});
+  if (!r.ok) alert((await r.json().catch(() => ({}))).error || "Upload failed");
+  e.target.value = "";
+  animSig = "";
+  loadState();
+};
+
+// ---- countdown
+function leftText(c) {
+  let when = new Date(c.at), now = new Date();
+  if (c.yearly) { when.setFullYear(now.getFullYear()); if (when < now - 864e5) when.setFullYear(now.getFullYear() + 1); }
+  const s = (when - now) / 1000;
+  if (s < -86400) return "passed";
+  if (s <= 0) return "today!";
+  if (s >= 2 * 86400) return Math.floor(s / 86400) + " days";
+  if (s >= 7200) return Math.floor(s / 3600) + " hours";
+  return Math.max(1, Math.floor(s / 60)) + " min";
+}
+const cdPayload = (l) => l.map((c) => ({name: c.name, code: c.code, at: c.at, colour: c.colour, on: c.on, yearly: c.yearly}));
+let cdSig = "";
+function renderCountdowns() {
+  const list = state.settings.countdowns;
+  $("cd-count").textContent = "(" + list.filter((c) => c.on).length + " of " + list.length + " on)";
+  const sig = JSON.stringify(list) + Math.floor(Date.now() / 60000);
+  if (sig === cdSig || (document.activeElement && document.activeElement.closest && document.activeElement.closest("#countdowns"))) return;
+  cdSig = sig;
+  const el = $("countdowns");
+  el.innerHTML = "";
+  list.forEach((c, i) => {
+    const row = document.createElement("div");
+    row.className = "cd" + (c.on ? "" : " off");
+    row.innerHTML = '<span class="swatch" style="background:' + esc(c.colour) + ';width:18px;height:18px"></span><input type="checkbox" ' + (c.on ? "checked" : "") + ' title="Show this countdown">' +
+      "<div><div>" + esc(c.name) + (c.yearly ? ' <span class="dim">· every year</span>' : "") + '</div><div class="dim" style="font-size:13px">' + esc(c.at.replace("T", " ")) + " · " + leftText(c) + "</div></div>" +
+      '<input type="text" maxlength="4" value="' + esc(c.code) + '" title="Short name shown on the Pixoo"><span class="btns"><button title="Move up"' + (i === 0 ? " disabled" : "") + '>▲</button><button title="Move down"' + (i === list.length - 1 ? " disabled" : "") + '>▼</button><button title="Remove">✕</button></span>';
+    const [up, down, del] = row.querySelectorAll(".btns button");
+    const save = (l) => post("/api/countdowns", {countdowns: cdPayload(l)});
+    const move = (d) => { const l = [...list]; [l[i], l[i + d]] = [l[i + d], l[i]]; save(l); };
+    up.onclick = () => move(-1); down.onclick = () => move(1);
+    del.onclick = () => { if (confirm("Remove " + c.name + "?")) save(list.filter((x) => x !== c)); };
+    row.querySelector("input[type=checkbox]").onchange = (e) => save(list.map((x) => x === c ? {...x, on: e.target.checked} : x));
+    row.querySelector("input[type=text]").onchange = (e) => save(list.map((x) => x === c ? {...x, code: e.target.value} : x));
+    el.appendChild(row);
+  });
+  if (!list.length) el.innerHTML = '<span class="dim">No countdowns yet. Add one below.</span>';
+}
+$("cd-add").onclick = () => {
+  const name = $("cd-name").value.trim(), at = $("cd-at").value;
+  if (!name || !at) { alert("Give it a name and a date and time."); return; }
+  post("/api/countdowns", {countdowns: cdPayload(state.settings.countdowns).concat([{name, at, colour: $("cd-colour").value, on: true, yearly: $("cd-yearly").checked, code: ""}])})
+    .then(() => { $("cd-name").value = ""; });
+};
+
+// ---- music visualizer
+let visSig = "";
+function renderMusic() {
+  const s = state.settings, favs = new Set(s.vis_favourites);
+  const sig = JSON.stringify([s.vis_style, s.vis_styles, s.vis_favourites, s.vis_names, s.mode === "visualizer"]);
+  $("vis-secs-out").textContent = s.vis_cycle_seconds; $("vis-count-out").textContent = s.vis_styles;
+  if (document.activeElement !== $("vis-secs")) $("vis-secs").value = s.vis_cycle_seconds;
+  if (document.activeElement !== $("vis-count")) $("vis-count").value = s.vis_styles;
+  $("vis-cycle").checked = s.vis_cycle;
+  $("vis-fav").textContent = (favs.has(s.vis_style) ? "★ Favourite" : "☆ Favourite");
+  if (document.activeElement !== $("vis-name")) $("vis-name").value = s.vis_names[String(s.vis_style)] || "";
+  if (sig === visSig) return;
+  visSig = sig;
+  const el = $("styles");
+  el.innerHTML = "";
+  for (let i = 0; i < s.vis_styles; i++) {
+    const b = document.createElement("button");
+    b.className = "style" + (i === s.vis_style && s.mode === "visualizer" ? " active" : "");
+    b.innerHTML = '<span class="fav' + (favs.has(i) ? " on" : "") + '">' + (favs.has(i) ? "★" : "☆") + "</span><b>" + i + "</b><small>" + esc(s.vis_names[String(i)] || "") + "</small>";
+    b.querySelector(".fav").onclick = (e) => { e.stopPropagation(); post("/api/vis/favourites", {styles: favs.has(i) ? [...favs].filter((x) => x !== i) : [...favs, i]}); };
+    b.onclick = () => post("/api/settings", {mode: "visualizer", vis_style: i, vis_cycle: false});
+    el.appendChild(b);
+  }
+}
+const stepStyle = (d) => post("/api/settings", {mode: "visualizer", vis_cycle: false, vis_style: (state.settings.vis_style + d + state.settings.vis_styles) % state.settings.vis_styles});
+$("vis-prev").onclick = () => stepStyle(-1);
+$("vis-next").onclick = () => stepStyle(1);
+$("vis-fav").onclick = () => { const f = new Set(state.settings.vis_favourites), n = state.settings.vis_style; f.has(n) ? f.delete(n) : f.add(n); post("/api/vis/favourites", {styles: [...f]}); };
+$("vis-name").onchange = (e) => post("/api/vis/name", {style: state.settings.vis_style, name: e.target.value});
+$("vis-cycle").onchange = (e) => post("/api/settings", {vis_cycle: e.target.checked, ...(e.target.checked ? {mode: "visualizer"} : {})});
+$("vis-secs").oninput = () => { $("vis-secs-out").textContent = $("vis-secs").value; };
+$("vis-secs").onchange = () => post("/api/settings", {vis_cycle_seconds: +$("vis-secs").value});
+$("vis-count").oninput = () => { $("vis-count-out").textContent = $("vis-count").value; };
+$("vis-count").onchange = () => post("/api/settings", {vis_styles: +$("vis-count").value});
+$("cdseconds").oninput = () => { $("cdseconds-out").textContent = $("cdseconds").value; };
+$("cdseconds").onchange = () => post("/api/settings", {countdown_seconds: +$("cdseconds").value});
+
+// ---- timer
+let timerBase = {left: 0, at: 0, state: "idle", total: 0};
+const mmss = (s) => { s = Math.max(0, Math.ceil(s)); const m = Math.floor(s / 60); return m + ":" + String(s % 60).padStart(2, "0"); };
+function renderTimer() {
+  const t = state.timer;
+  timerBase = {left: t.left, at: performance.now(), state: t.state, total: t.total};
+  $("t-pause").textContent = t.state === "paused" ? "Resume" : "Pause";
+  $("t-pause").disabled = t.state === "idle";
+  $("t-cancel").disabled = t.state === "idle";
+  $("t-start").textContent = t.state === "idle" ? "Start" : "Restart";
+  tickTimer();
+}
+function tickTimer() {
+  const b = timerBase;
+  const left = b.state === "running" ? b.left - (performance.now() - b.at) / 1000 : b.left;
+  const finished = b.state === "running" && left <= 0;
+  $("t-readout").textContent = b.state === "idle" ? "0:00" : mmss(left);
+  $("t-readout").className = "readout" + (finished ? " done" : b.state === "running" ? " run" : "");
+  $("t-status").textContent = b.state === "idle" ? "No timer running." : finished ? "Time is up." : b.state === "paused" ? "Paused." : "Running, of " + mmss(b.total) + ".";
+}
+setInterval(() => { if (state) tickTimer(); }, 250);
+const startTimer = (minutes, seconds) => post("/api/timer", {action: "start", minutes, seconds});
+for (const m of [1, 3, 5, 10, 15, 30, 60]) {
+  const b = document.createElement("button");
+  b.className = "btn"; b.textContent = m + " min"; b.onclick = () => startTimer(m, 0);
+  $("t-presets").appendChild(b);
+}
+$("t-start").onclick = () => startTimer(+$("t-min").value || 0, +$("t-sec").value || 0);
+$("t-pause").onclick = () => post("/api/timer", {action: state.timer.state === "paused" ? "resume" : "pause"});
+$("t-cancel").onclick = () => post("/api/timer", {action: "cancel"});
+
+loadState(); loadGames();
+setInterval(loadState, 3000);
+setInterval(loadGames, 10000);
+</script>
+</body>
+</html>
