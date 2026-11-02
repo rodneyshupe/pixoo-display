@@ -92,6 +92,7 @@ The feeds are unofficial and may change; a league that fails shows its error in 
 
 ## About the starter animations
 
-`seed_gifs/` holds animated GIFs of classic arcade characters (Pac-Man, Galaga, Dig Dug, Frogger and others), cut from fan-ripped sprite sheets
-and shrunk to 16×16. Those characters belong to their publishers: this is for personal use, so keep the repository private, or delete
-`seed_gifs/` and add your own GIFs in the web app before making it public.
+`seed_gifs/` holds animated GIFs of classic arcade characters (Pac-Man, Galaga, Dig Dug, Frogger and others), cut from fan-ripped sprite
+sheets and shrunk to 16×16, as a starter set for the animations mode. The characters belong to their publishers and these GIFs are not
+covered by any licence of this project: they are included for personal use. If that matters to you, delete `seed_gifs/` (or just the
+ones you don't want) and add your own GIFs in the web app; nothing else depends on them.
