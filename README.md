@@ -11,6 +11,9 @@ cp .env.example .env     # set PIXOO_HOST (the Pixoo's IP) and TZ
 docker compose up -d --build
 ```
 
+To put it on another machine over SSH instead (rsync + `docker compose up -d --build` there), use `./deploy.sh user@host [folder]`;
+the host keeps its own `.env` and `.env.secret`.
+
 The optional `.env.secret` (only for the Home Assistant MQTT password) may be left out. GitHub Actions builds the image on every push
 (`.github/workflows/docker.yml`) and publishes it as `ghcr.io/rodneyshupe/pixoo-display:latest`, so `docker compose pull` works too once
 you are logged in to the registry.
