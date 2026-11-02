@@ -1,5 +1,5 @@
 # Divoom Pixoo 16 display service. Web app: http://<host>:8017 (LAN only, no login). Needs only the Pixoo's address: no Home
-# Assistant, no accounts. State (settings, picked games, animations) is kept in ${APPDATA_ROOT}/pixoo-display.
+# Assistant, no accounts. State (settings, picked games, animations) is kept in the pixoo-display folder under APPDATA_ROOT.
 #   cp .env.example .env  &&  docker compose up -d --build
 # .env.secret (MQTT_PASSWORD) is optional and only used for the Home Assistant entities.
 services:
