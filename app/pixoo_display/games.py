@@ -286,10 +286,9 @@ def colourise(g, overrides):
 
 
 def held(g, settings):
-    """A picked game (not of a followed team) that waits for its start before it joins the rotation."""
-    followed = {t["key"] for t in settings["teams"] if t["on"]}
+    """A picked game that waits for its start before it joins the rotation (even if a followed team plays in it)."""
     pin = settings["pins"].get(g["id"])
-    return bool(pin and pin.get("after_start") and g["state"] == "pre" and not (g["away"]["key"] in followed or g["home"]["key"] in followed))
+    return bool(pin and pin.get("after_start") and g["state"] == "pre")
 
 
 def choose(games, settings, now, apply_hold=True):
