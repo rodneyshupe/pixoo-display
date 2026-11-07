@@ -8,6 +8,7 @@ Everything is unofficial and may change; a league that fails keeps its last data
 """
 import concurrent.futures
 import datetime
+import email.utils
 import json
 import threading
 import time
@@ -92,7 +93,50 @@ def _espn_games(league, day0):
     return out
 
 
+THESCORE_CFL = "https://api.thescore.com/cfl/events"
+
+
+def _cfl_live(games):
+    """The CFL stats API only publishes a score once a game is Finished, so overlay theScore's public feed (live score,
+    quarter and clock) on the games it lists. Best effort: any failure leaves the stats-API data as it is."""
+    try:
+        events = _get(THESCORE_CFL)
+    except Exception:
+        return
+    by_abbr = {t[0]: t for t in CFL_TEAMS.values()}
+    for e in events:
+        try:
+            start = email.utils.parsedate_to_datetime(e["game_date"]).astimezone(config.TZ)
+            ha, aa = e["home_team"]["abbreviation"], e["away_team"]["abbreviation"]
+            status = e.get("status") or ""
+            if ha not in by_abbr or aa not in by_abbr or status not in ("pre_game", "in_progress", "final"):
+                continue
+            g = next((x for x in games if x["home"]["key"] == "cfl:" + ha and x["away"]["key"] == "cfl:" + aa
+                      and abs((x["start"] - start).total_seconds()) < 36 * 3600), None)
+            if g is None or status == "pre_game":
+                continue
+            bs = e.get("box_score") or {}
+            prog = bs.get("progress") or {}
+            g["home"]["score"] = _int(((bs.get("score") or {}).get("home") or {}).get("score"))
+            g["away"]["score"] = _int(((bs.get("score") or {}).get("away") or {}).get("score"))
+            g["state"] = "in" if status == "in_progress" else "post"
+            if g["state"] == "in":
+                g["period"] = _int(prog.get("segment"))
+                g["clock"] = prog.get("clock") or ""
+                g["detail"] = prog.get("string") or "In progress"
+            else:
+                g["period"], g["clock"], g["detail"] = 0, "", "Final"
+        except Exception:
+            continue
+
+
 def _cfl_games(day0):
+    out = _cfl_stats(day0)
+    _cfl_live(out)
+    return out
+
+
+def _cfl_stats(day0):
     d = _get(CFL_API % day0.year)
     name, _, sport, periods = LEAGUES["cfl"]
     now = config.now()
