@@ -260,18 +260,19 @@ class Engine(threading.Thread):
             selected = self.update_selection(s, now)
             if selected:
                 pics = [render.score_pictures(g, now) for g in selected]          # one picture per game, two for a 3-digit score
-                reps = max(1, round(s["dwell"] * 1000 / PLAY_MS))                 # 2 s frames a game is held for
+                key = {"in": "dwell", "pre": "dwell_pre", "post": "dwell_post"}
+                reps = [max(1, round(s[key.get(g["state"], "dwell")] * 1000 / PLAY_MS)) for g in selected]   # 2 s frames per game
 
                 def holds(n, r):
                     """Frames each picture of a game is held: all of them for a single picture; for a 3-digit score the names
                     come first for one frame (2 s) and the scores get the rest."""
                     return [r] if n == 1 else [1, max(1, r - 1)]
 
-                while sum(sum(holds(len(p), reps)) for p in pics) > MAX_LOOP and reps > 1:
-                    reps -= 1
+                while sum(sum(holds(len(p), r)) for p, r in zip(pics, reps)) > MAX_LOOP and max(reps) > 1:
+                    reps[reps.index(max(reps))] -= 1
                 playlist, frames = [], []
-                for g, ps in zip(selected, pics):
-                    for i, (pic, hold) in enumerate(zip(ps, holds(len(ps), reps))):
+                for g, ps, r in zip(selected, pics, reps):
+                    for i, (pic, hold) in enumerate(zip(ps, holds(len(ps), r))):
                         part = "" if len(ps) == 1 else (" · names" if i == 0 else " · scores")
                         playlist.append({"label": game_text(g) + part, "frame": pic, "secs": hold * PLAY_MS // 1000})
                         frames += [pic] * hold

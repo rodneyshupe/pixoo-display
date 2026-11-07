@@ -105,7 +105,9 @@ class Bridge:
         out["mode"] = ("select", base("mode", "Mode", icon="mdi:led-matrix", options=list(MODE_LABELS.values()),
                                       command_topic="%s/mode/set" % BASE, state_topic="%s/mode/state" % BASE),
                        MODE_LABELS[s["mode"]], None)
-        for obj, name, key, lo, hi, unit, icon in (("dwell", "Seconds per game", "dwell", 4, 60, "s", "mdi:timer-sand"),
+        for obj, name, key, lo, hi, unit, icon in (("dwell", "Seconds per live game", "dwell", 4, 60, "s", "mdi:timer-sand"),
+                                                    ("dwell_pre", "Seconds per upcoming game", "dwell_pre", 2, 60, "s", "mdi:timer-sand-empty"),
+                                                    ("dwell_post", "Seconds per finished game", "dwell_post", 2, 60, "s", "mdi:timer-sand-complete"),
                                                     ("gif_minutes", "Minutes per animation", "gif_minutes", 1, 30, "min", "mdi:timer-outline"),
                                                     ("final_hours", "Hours to keep finals", "final_hours", 0, 12, "h", "mdi:flag-checkered"),
                                                     ("city_seconds", "Seconds per city", "city_seconds", 4, 60, "s", "mdi:city-variant-outline"),
@@ -228,7 +230,7 @@ class Bridge:
                 s.update(vis_cycle=value == "ON")
             elif obj == "units":
                 s.update(units="F" if value == "Fahrenheit" else "C")
-            elif obj in ("dwell", "gif_minutes", "final_hours", "city_seconds", "countdown_seconds", "vis_style", "timer_minutes"):
+            elif obj in ("dwell", "dwell_pre", "dwell_post", "gif_minutes", "final_hours", "city_seconds", "countdown_seconds", "vis_style", "timer_minutes"):
                 s.update(**{obj: int(float(value))})
             elif obj.startswith("team_"):
                 key = next(t["key"] for t in s.get()["teams"] if "team_" + slug(t["key"]) == obj)

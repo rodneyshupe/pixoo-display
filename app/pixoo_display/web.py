@@ -43,6 +43,7 @@ def public_game(g, selected_ids, settings):
     return {"id": g["id"], "league": g["league"], "league_name": g["league_name"], "state": g["state"], "period": g["period"],
             "periods": g["periods"], "clock": g["clock"], "detail": g["detail"], "start": g["start"].isoformat(),
             "first": side(first), "second": side(second), "sep": sep, "pinned": g["id"] in settings["pins"],
+            "after_start": bool(settings["pins"].get(g["id"], {}).get("after_start")),
             "selected": g["id"] in selected_ids, "label": game_name(g)}
 
 
@@ -116,7 +117,7 @@ def make_handler(app):
                     s = app.store.get()
                     rotation = [gm.colourise(g, s["colours"]) for g in gm.choose(app.games.today()[0], s, config.now())[0]]
                     return self._send(200, {
-                        "settings": {k: s[k] for k in ("mode", "dwell", "gif_minutes", "final_hours", "teams", "units", "city_seconds", "screen_on", "brightness",
+                        "settings": {k: s[k] for k in ("mode", "dwell", "dwell_pre", "dwell_post", "gif_minutes", "final_hours", "teams", "units", "city_seconds", "screen_on", "brightness",
                                                            "countdowns", "countdown_seconds", "vis_style", "vis_styles", "vis_favourites", "vis_cycle", "vis_cycle_seconds", "vis_names", "timer_minutes")},
                         "now": app.engine.now_showing, "device": app.pixoo.status(),
                         "selected": len(rotation), "rotation": [public_game(g, {x["id"] for x in rotation}, s) for g in rotation], "sprites": sprites.names(),
@@ -162,10 +163,10 @@ def make_handler(app):
                     return self._send(200, {"saved": name, "sprites": sprites.names()})
                 b = self._json()
                 if path == "/api/settings":
-                    s = app.store.update(**{k: b[k] for k in ("mode", "dwell", "gif_minutes", "final_hours", "units", "city_seconds", "screen_on", "brightness",
+                    s = app.store.update(**{k: b[k] for k in ("mode", "dwell", "dwell_pre", "dwell_post", "gif_minutes", "final_hours", "units", "city_seconds", "screen_on", "brightness",
                                                        "countdown_seconds", "vis_style", "vis_styles", "vis_cycle", "vis_cycle_seconds", "timer_minutes") if k in b})
                 elif path == "/api/pin":
-                    app.store.pin(str(b["id"]), bool(b.get("pinned", True)), b.get("day"), str(b.get("label", "")))
+                    app.store.pin(str(b["id"]), bool(b.get("pinned", True)), b.get("day"), str(b.get("label", "")), b.get("after_start"))
                 elif path == "/api/league":
                     if b["key"] not in gm.LEAGUES:
                         raise ValueError("unknown league")

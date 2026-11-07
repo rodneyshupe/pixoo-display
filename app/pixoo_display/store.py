@@ -13,7 +13,9 @@ DEFAULTS = {
     "mode": "scores",          # clock | scores | gifs | countdown | visualizer
     "screen_on": True,         # the display itself on/off (the Pixoo's own screen switch)
     "brightness": None,        # 1-100; None until set: then the Pixoo's own setting is read and kept
-    "dwell": 12,               # about how many seconds each game is shown (rounded to the Pixoo's 2 s frames)
+    "dwell": 12,               # about how many seconds a game in progress is shown (rounded to the Pixoo's 2 s frames)
+    "dwell_pre": 8,            # ... a game that has not started yet
+    "dwell_post": 6,           # ... a finished game
     "gif_minutes": 2,          # minutes each animation plays in gifs mode
     "final_hours": 3,          # a finished game of a followed team stays in the rotation this long
     # Followed teams: their game today is shown without picking it. key = league:ESPN abbreviation (CFL: see games.py).
@@ -54,7 +56,7 @@ DEFAULTS = {
     "pins": {},                # picked games: game id -> {"day": the game's day (YYYY-MM-DD), "label": text}; dropped after that day
     "finals": {},              # game id -> when it was first seen finished (ISO), to time a final out of the rotation
 }
-LIMITS = {"dwell": (4, 60), "gif_minutes": (1, 60), "final_hours": (0, 12), "city_seconds": (4, 60), "countdown_seconds": (4, 60),
+LIMITS = {"dwell": (4, 60), "dwell_pre": (2, 60), "dwell_post": (2, 60), "gif_minutes": (1, 60), "final_hours": (0, 12), "city_seconds": (4, 60), "countdown_seconds": (4, 60),
           "vis_style": (0, 63), "vis_styles": (1, 32), "vis_cycle_seconds": (5, 600), "timer_minutes": (1, 99)}
 MAX_COUNTDOWNS = 12
 MAX_CITIES = 8
@@ -134,10 +136,14 @@ class Store:
             self._save()
             return copy.deepcopy(self.data)
 
-    def pin(self, game_id, on, day=None, label=""):
+    def pin(self, game_id, on, day=None, label="", after_start=None):
+        """Pick (or drop) a game. after_start: only show it once it has started (None keeps the current choice)."""
         with self.lock:
             if on:
-                self.data["pins"][game_id] = {"day": day or config.now().date().isoformat(), "label": label}
+                old = self.data["pins"].get(game_id, {})
+                self.data["pins"][game_id] = {"day": day or old.get("day") or config.now().date().isoformat(),
+                                              "label": label or old.get("label", ""),
+                                              "after_start": bool(old.get("after_start", False) if after_start is None else after_start)}
             else:
                 self.data["pins"].pop(game_id, None)
             self._save()

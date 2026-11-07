@@ -168,7 +168,9 @@
 
     <section>
       <h2>Rotation timing</h2>
-      <label class="row">Seconds per game (2 s steps) <input type="range" id="dwell" min="4" max="60" step="2"><output id="dwell-out"></output></label>
+      <label class="row">Seconds per game in progress <input type="range" id="dwell" min="4" max="60" step="2"><output id="dwell-out"></output></label>
+      <label class="row">Seconds per game not started <input type="range" id="dwellpre" min="2" max="60" step="2"><output id="dwellpre-out"></output></label>
+      <label class="row">Seconds per finished game <input type="range" id="dwellpost" min="2" max="60" step="2"><output id="dwellpost-out"></output></label>
       <label class="row" style="margin-bottom:0">Keep finals for (hours) <input type="range" id="final" min="0" max="12" step="1"><output id="final-out"></output></label>
     </section>
 
@@ -384,7 +386,7 @@ document.querySelectorAll("#modes button").forEach((b) => b.classList.toggle("ac
   const onCount = state.animations.filter((a) => a.on).length;
   $("now-sub").textContent = {clock: state.cities.filter((c) => c.on).length + " cit" + (state.cities.filter((c) => c.on).length === 1 ? "y" : "ies") + ": weather and local time", countdown: state.settings.countdowns.filter((c) => c.on).length + " countdowns", visualizer: "The Pixoo's own music visualizer", scores: state.selected + " game" + (state.selected === 1 ? "" : "s") + " in the rotation today", gifs: onCount + " of " + state.animations.length + " animations"}[s.mode] +
     (s.mode === "scores" && state.now.mode === "clock" ? " (nothing on, showing the clock)" : "");
-  for (const [id, key] of [["dwell", "dwell"], ["final", "final_hours"], ["gifmin", "gif_minutes"], ["cityseconds", "city_seconds"]]) {
+  for (const [id, key] of [["dwell", "dwell"], ["dwellpre", "dwell_pre"], ["dwellpost", "dwell_post"], ["final", "final_hours"], ["gifmin", "gif_minutes"], ["cityseconds", "city_seconds"]]) {
     if (document.activeElement !== $(id)) $(id).value = s[key];
     $(id + "-out").textContent = s[key];
   }
@@ -409,8 +411,8 @@ function renderRotation() {
     el.appendChild(row);
   });
   if (!list.length) el.innerHTML = '<p class="dim" style="margin:0">Nothing selected for today. Follow a team or tick a game below; until then the Pixoo shows the clock.</p>';
-  const per = state.settings.dwell, n = list.length;
-  $("rot-note").textContent = n > 1 ? "Each game is shown for about " + per + " s, so the loop takes about " + n * per + " s. It is only re-sent to the Pixoo when something changes." : "";
+  const st = state.settings, per = (g) => ({pre: st.dwell_pre, post: st.dwell_post})[g.state] || st.dwell, total = list.reduce((a, g) => a + per(g), 0);
+  $("rot-note").textContent = list.length > 1 ? "The loop takes about " + total + " s (games in progress " + st.dwell + " s, not started " + st.dwell_pre + " s, finished " + st.dwell_post + " s). It is only re-sent to the Pixoo when something changes." : "";
 }
 
 function chip(text, on, onclick, onremove) {
@@ -612,6 +614,14 @@ function renderGames() {
       row.innerHTML = '<input type="checkbox" ' + (g.pinned ? "checked" : "") + ' title="Show this game"><div class="teams">' + teamHtml(g.first, g.first.score) +
         '<span class="dim">' + g.sep + '</span>' + teamHtml(g.second, g.second.score) + '</div><div class="status' + (st.live ? " live" : "") + '">' + (st.live ? "● " : "") + esc(st.text) + (g.selected && !g.pinned ? ' <span title="a followed team">★</span>' : "") + "</div>";
       row.querySelector("input[type=checkbox]").onchange = (e) => post("/api/pin", {id: g.id, pinned: e.target.checked, day: g.start.slice(0, 10), label: g.label});
+      if (g.pinned && g.state === "pre") {                       // picked and not started: offer to hold it back until it is on
+        const lab = document.createElement("label");
+        lab.className = "dim";
+        lab.style.cssText = "font-size:12px;margin-left:8px;white-space:nowrap";
+        lab.innerHTML = '<input type="checkbox"' + (g.after_start ? " checked" : "") + '> once started';
+        lab.querySelector("input").onchange = (e) => post("/api/pin", {id: g.id, pinned: true, after_start: e.target.checked});
+        row.querySelector(".status").appendChild(lab);
+      }
       row.querySelectorAll(".star").forEach((b) => b.onclick = () => post("/api/team", {key: b.dataset.key, name: b.dataset.name, on: !b.classList.contains("on")}));
       row.querySelectorAll("input[type=color]").forEach((c) => c.onchange = () => post("/api/colour", {key: c.dataset.key, colour: c.value}));
       wrap.appendChild(row);
@@ -636,7 +646,7 @@ async function loadGames() {
 function goDay(d) { day = d; games = null; $("games").innerHTML = '<p class="dim">Loading…</p>'; loadGames(); }
 
 document.querySelectorAll("#modes button").forEach((b) => b.onclick = () => post("/api/settings", {mode: b.dataset.mode}));
-for (const [id, key] of [["dwell", "dwell"], ["final", "final_hours"], ["gifmin", "gif_minutes"], ["cityseconds", "city_seconds"]]) {
+for (const [id, key] of [["dwell", "dwell"], ["dwellpre", "dwell_pre"], ["dwellpost", "dwell_post"], ["final", "final_hours"], ["gifmin", "gif_minutes"], ["cityseconds", "city_seconds"]]) {
   $(id).oninput = () => { $(id + "-out").textContent = $(id).value; };
   $(id).onchange = () => post("/api/settings", {[key]: +$(id).value});
 }

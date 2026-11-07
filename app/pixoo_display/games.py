@@ -299,6 +299,8 @@ def choose(games, settings, now):
         followed_game = g["away"]["key"] in followed or g["home"]["key"] in followed
         if not (pinned or followed_game):
             continue
+        if pinned and not followed_game and pins[g["id"]].get("after_start") and g["state"] == "pre":
+            continue                                          # picked "only once it has started"
         if g["state"] == "post":
             first = finals.get(g["id"])
             if first is None:                                 # start + 3 h is about when it ended, if we missed it
