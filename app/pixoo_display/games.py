@@ -285,7 +285,14 @@ def colourise(g, overrides):
     return dict(g, away=side(g["away"]), home=side(g["home"]))
 
 
-def choose(games, settings, now):
+def held(g, settings):
+    """A picked game (not of a followed team) that waits for its start before it joins the rotation."""
+    followed = {t["key"] for t in settings["teams"] if t["on"]}
+    pin = settings["pins"].get(g["id"])
+    return bool(pin and pin.get("after_start") and g["state"] == "pre" and not (g["away"]["key"] in followed or g["home"]["key"] in followed))
+
+
+def choose(games, settings, now, apply_hold=True):
     """The games to rotate through: today's games of followed teams plus the games picked in the web app.
     Live first, then the ones still to come (soonest first), then finals (a followed team's final drops out
     `final_hours` after it was first seen finished; a picked one stays until midnight).
@@ -299,7 +306,7 @@ def choose(games, settings, now):
         followed_game = g["away"]["key"] in followed or g["home"]["key"] in followed
         if not (pinned or followed_game):
             continue
-        if pinned and not followed_game and pins[g["id"]].get("after_start") and g["state"] == "pre":
+        if apply_hold and held(g, settings):
             continue                                          # picked "only once it has started"
         if g["state"] == "post":
             first = finals.get(g["id"])

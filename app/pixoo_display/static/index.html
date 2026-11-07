@@ -403,10 +403,13 @@ function renderRotation() {
     const st = statusOf(g), row = document.createElement("div");
     row.className = "game sel";
     const side = (t) => '<span class="team" style="color:' + t.colour + '">' + esc(t.abbr) + '</span>' + (g.state === "pre" ? "" : '<span class="score">' + t.score + "</span>");
-    const why = g.pinned ? "picked" : "★ followed team";
+    const why = g.held ? "picked · waiting for the start" : g.pinned ? "picked" : "★ followed team";
     row.innerHTML = '<span class="dim">' + (list.indexOf(g) + 1) + '</span><div class="teams">' + side(g.first) + '<span class="dim">' + g.sep + '</span>' + side(g.second) +
       '<span class="dim" style="font-size:13px">' + esc(g.league_name) + " · " + why + '</span></div><div class="status' + (st.live ? " live" : "") + '">' + (st.live ? "● " : "") + esc(st.text) +
+      (g.pinned && g.state === "pre" ? ' <label class="dim" style="font-size:12px;white-space:nowrap"><input type="checkbox" class="once"' + (g.after_start ? " checked" : "") + "> once started</label>" : "") +
       (g.pinned ? ' <button class="star" title="Remove this pick" data-id="' + esc(g.id) + '">✕</button>' : "") + "</div>";
+    const once = row.querySelector(".once");
+    if (once) once.onchange = () => post("/api/pin", {id: g.id, pinned: true, after_start: once.checked});
     row.querySelectorAll("button[data-id]").forEach((b) => b.onclick = () => post("/api/pin", {id: b.dataset.id, pinned: false}));
     el.appendChild(row);
   });

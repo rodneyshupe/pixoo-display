@@ -43,7 +43,7 @@ def public_game(g, selected_ids, settings):
     return {"id": g["id"], "league": g["league"], "league_name": g["league_name"], "state": g["state"], "period": g["period"],
             "periods": g["periods"], "clock": g["clock"], "detail": g["detail"], "start": g["start"].isoformat(),
             "first": side(first), "second": side(second), "sep": sep, "pinned": g["id"] in settings["pins"],
-            "after_start": bool(settings["pins"].get(g["id"], {}).get("after_start")),
+            "after_start": bool(settings["pins"].get(g["id"], {}).get("after_start")), "held": gm.held(g, settings),
             "selected": g["id"] in selected_ids, "label": game_name(g)}
 
 
@@ -115,12 +115,12 @@ def make_handler(app):
                     return self._send(200, {"ok": True})
                 if path == "/api/state":
                     s = app.store.get()
-                    rotation = [gm.colourise(g, s["colours"]) for g in gm.choose(app.games.today()[0], s, config.now())[0]]
+                    rotation = [gm.colourise(g, s["colours"]) for g in gm.choose(app.games.today()[0], s, config.now(), apply_hold=False)[0]]
                     return self._send(200, {
                         "settings": {k: s[k] for k in ("mode", "dwell", "dwell_pre", "dwell_post", "gif_minutes", "final_hours", "teams", "units", "city_seconds", "screen_on", "brightness",
                                                            "countdowns", "countdown_seconds", "vis_style", "vis_styles", "vis_favourites", "vis_cycle", "vis_cycle_seconds", "vis_names", "timer_minutes")},
                         "now": app.engine.now_showing, "device": app.pixoo.status(),
-                        "selected": len(rotation), "rotation": [public_game(g, {x["id"] for x in rotation}, s) for g in rotation], "sprites": sprites.names(),
+                        "selected": sum(1 for g in rotation if not gm.held(g, s)), "rotation": [public_game(g, {x["id"] for x in rotation if not gm.held(x, s)}, s) for g in rotation], "sprites": sprites.names(),
                         "animations": [{"name": n, "on": on} for n, on in app.store.animations(sprites.names())],
                         "cities": cities_now(app, s), "drawing": app.engine.drawing(), "timer": timer_now(s),
                         "mqtt": app.mqtt.status() if app.mqtt else {"enabled": False},
