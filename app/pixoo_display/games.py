@@ -189,7 +189,7 @@ class GamesService(threading.Thread):
         games = self.games.get(league)
         if games is None:
             return True
-        busy = any(g["state"] == "in" or (g["state"] == "pre" and 0 <= g["start"].timestamp() - now_ts < 1200) for g in games)
+        busy = any(g["state"] == "in" or (g["state"] == "pre" and g["start"].timestamp() - now_ts < 1200) for g in games)
         ttl = 30 if busy else 300
         if league in self.errors:
             ttl = 60
